@@ -1,33 +1,41 @@
 # stream
 
-A minimal reactive state library for Luau.
+A minimal reactive state library for Luau inspired by charm.
 
-## API
+## concepts
 
-### `stream(initial)`
-
-Creates a new stream with an initial value. Returns a callable that reads or writes the value.
+### streams // `stream(initial: T) -> stream<T>`
+A stream is just a function — calling it with no arguments reads the current value, calling it with an argument sets it.
 ```luau
+local stream = require(...)
 local coins = stream(0)
 
-coins()     -- read  → 0
-coins(100)  -- write → 100
+print(coins())     --// 0
+coins(100)
+print(coins())     --// 100
 ```
 
-### `stream.channel(s, callback)`
+This means streams are first-class values. You can pass them around, store them in tables, and call them anywhere without carrying a reference to some object or module.
 
-Subscribes to a stream. Fires `callback` whenever the value changes. Returns a `channel`.
+### channels // `stream.channel(callback: () -> ()) -> channel<T>`
+Subscribing to a stream is done via `.channel` on the stream itself. The callback receives no arguments — to read the new value inside a callback, call the stream directly.
 ```luau
-local ch = stream.channel(coins, function(val)
-    print(val)
+coins.channel(function()
+    print(coins())  --// read the new value inside the callback
 end)
 ```
 
-> A single stream can have multiple channels open at the same time.
-
-### `channel.drain()`
-
-Unsubscribes the channel so it stops receiving updates.
+### drains // `channel.drain()`
+Closes the channel. The callback will no longer fire when the stream changes.
 ```luau
-ch.drain()
+local coins = stream(0)
+
+local channel = coins.channel(function()
+    print(coins())
+end)
+
+coins(100) --// 100
+channel.drain()
+coins(0)   --// nothing prints
 ```
+
